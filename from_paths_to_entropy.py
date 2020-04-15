@@ -29,6 +29,7 @@ if __name__ == "__main__":
     from graphfile import GraphFile
     from graph import Graph
     from itertools import product
+    from math import log
     import datetime
 
     # Read necessary data
@@ -40,10 +41,12 @@ if __name__ == "__main__":
     # Process data
     edges = remove_i_and_f(edges)
     G = Graph(edges)
-    G_base = G.nodes
+
+    print("Number of nodes: ", len(G.nodes))
+    print("Number of edges: ", len(G.edges.keys()))
 
     # Process paths as needed
-    all_paths = {(i,j):[] for i,j in product(G_base,G_base)}
+    all_paths = {(i,j):[] for i,j in product(G.nodes,G.nodes)}
     for path,count in paths.items():
         for index in range(len(path)):
             p = path[index:]
@@ -55,19 +58,30 @@ if __name__ == "__main__":
         v = [list(x) for x in v]
         all_paths[k] = v
 
+
+    # Find number of possible endings for each i
+    endings = {}
+    for n in G.nodes:
+        counter = 0
+        for k,v in all_paths.items():
+            if k[0] == n and len(v) > 0: counter += 1
+        endings[n] = counter
+
+
     # Calculate the entropy
     start = datetime.datetime.now()
     G.all_paths = all_paths
     C_H = dict()
     for n in G.nodes:
         node, entropy = G.get_node_entropy(n)
-        C_H[node] = entropy
+        C_H[node] = (1/log(len(G.nodes), 2))*entropy
     end = datetime.datetime.now()
-    print("Start time: ", start)
+    print("\nStart time: ", start)
     print("End time: ", end)
     print("Run time: ", end-start)
-    print("\nNumber of nodes: ", len(G.nodes))
-    print("Number of edges: ", len(G.edges.keys()))
+
+    entropy_scaled = {n:endings[n]*C_H[n] for n in G.nodes}
 
     # Save results to file
     GraphFile("results/manufacturing_entropy.txt").write_centrality_values_to_file(C_H)
+    GraphFile("results/manufacturing_entropy_scaled.txt").write_centrality_values_to_file(entropy_scaled)
