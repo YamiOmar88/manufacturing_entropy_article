@@ -13,3 +13,7 @@ To demonstrate the use of path - transfer flow entropy on manufacturing networks
 ### Data processing
 
 1. From time stamp to manufacturing paths: the data in `train_date.csv` is processes using `from_timestamp_to_paths.py` to obtain `data/manufacturing_paths.txt` and `data/manufacturing_edges.txt`.
+
+   `data/manufacturing_paths.txt` contains a manufacturing path in each line as well as the count for said path. The path is a list of white space separated workstations (identified with an integer from 0 to 51) while the count is the frequency with which said path showed in the data under evaluation. Thus, the count is a natural number. In total, there are 164213 different manufacturing paths in this dataset.
+
+   `data/manufacturing_edges.txt` is obtained by processing the manufacturing paths to obtain pair of workstations (i,j) and the frequency of the material flow from i to j. In total, there are 681 edges (accounting for dummy edges pointing from the source to a starting workstation, as well as pointing from a finishing workstation to a dummy sink).
