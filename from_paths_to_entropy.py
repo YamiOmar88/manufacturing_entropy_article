@@ -66,6 +66,8 @@ if __name__ == "__main__":
     print("Start time: ", start)
     print("End time: ", end)
     print("Run time: ", end-start)
+    print("\nNumber of nodes: ", len(G.nodes))
+    print("Number of edges: ", len(G.edges.keys()))
 
     # Save results to file
     GraphFile("results/manufacturing_entropy.txt").write_centrality_values_to_file(C_H)
