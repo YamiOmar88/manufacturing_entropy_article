@@ -43,5 +43,13 @@ if __name__ == "__main__":
     # =======================================
     C_H = GraphFile("results/manufacturing_entropy.txt").read_centrality_values_from_file()
 
+    dot = DOT_File("reduced_manufacturing_network_entropy.dot", "Bosch_entropy", reduced_G, C_H)
+    dot.save()
+
+
+    # Graph with node size related to scaled entropy
+    # ==============================================
+    C_H = GraphFile("results/manufacturing_entropy_scaled.txt").read_centrality_values_from_file()
+
     dot = DOT_File("reduced_manufacturing_network_entropy_scaled.dot", "Bosch_entropy", reduced_G, C_H)
     dot.save()
