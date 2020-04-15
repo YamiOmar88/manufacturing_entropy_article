@@ -68,4 +68,4 @@ if __name__ == "__main__":
     print("Run time: ", end-start)
 
     # Save results to file
-    GraphFile("results/_manufacturing_entropy.txt").write_centrality_values_to_file(C_H)
+    GraphFile("results/manufacturing_entropy.txt").write_centrality_values_to_file(C_H)
