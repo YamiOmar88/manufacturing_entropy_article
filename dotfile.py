@@ -16,8 +16,8 @@ class DOT_File:
 
     def _create_rank(self):
         ''' '''
-        rank = '{rank=min; i}\n'
-        rank += '{rank=max; f}'
+        rank = '{rank=min; source}\n'
+        rank += '{rank=max; sink}'
         return rank
 
 
@@ -40,11 +40,11 @@ class DOT_File:
         file_content += 'edge[arrowsize=0.2, arrowhead=normal]\n'
 
         # Nodes
-        file_content += 'i [shape=diamond, style=filled, fontsize=20, color=gray, width=2, height=2, fixedsize=true]\n'
-        file_content += 'f [shape=diamond, style=filled, fontsize=20, color=gray, width=2, height=2, fixedsize=true]\n'
+        file_content += 'source [shape=diamond, style=filled, fontsize=20, color=gray, width=2, height=2, fixedsize=true]\n'
+        file_content += 'sink [shape=diamond, style=filled, fontsize=20, color=gray, width=2, height=2, fixedsize=true]\n'
 
         for n in graph.nodes:
-            if n not in ['i', 'f']:
+            if n not in ['source', 'sink']:
                 c = colors.get(n, None)
                 p = property.get(n, 0)
                 p = ', width=' + str(p) + ', height=' + str(p) + ', fixedsize=true]\n'
@@ -57,9 +57,9 @@ class DOT_File:
             file_content += str(k[0]) + ' -> ' + str(k[1]) + ' [penwidth=1]\n'
 
         # Rank
-        file_content += '{rank=source; i}\n'
+        file_content += '{rank=source; source}\n'
         file_content += self._create_rank()
-        file_content += '{rank=sink; f}\n'
+        file_content += '{rank=sink; sink}\n'
         file_content += '}'
 
         return file_content
