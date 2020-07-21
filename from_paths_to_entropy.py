@@ -15,6 +15,20 @@ def add_self_loops(paths, edges):
         edges[self_loop] = edges.get(self_loop, 0) + v
     return edges
 
+
+
+def calculate_entropy(G, p_ij):
+    ''' '''
+    from math import log
+
+    C_H = {i:0 for i in G.nodes}
+    for i in G.nodes:
+        for j in G.nodes:
+            if p_ij[(i,j)] != 0:
+                C_H[i] = C_H[i] + p_ij[(i,j)] * log(p_ij[(i,j)], 2)
+    C_H = {k:-v for k,v in C_H.items()}
+    return C_H
+
 # ===== End Function definitions =========
 
 
@@ -46,18 +60,60 @@ if __name__ == "__main__":
     # CALCULATE ENTROPY
     # =========================================================================
 
-    # Method 1: finding all paths in the graph
-    # ========================================
-    pool = multiprocessing.Pool()
-    start = datetime.datetime.now()
-    print("Start time: ", start)
-    r = pool.map(G.get_node_entropy, G.nodes)
-    end = datetime.datetime.now()
-    print("End time: ", end)
-    print("Run time: ", end - start)
-    pool.close()
-    pool.join()
+    # # Method 1: finding all paths in the graph
+    # # Due to computation issues, this is deployed in an HPC!!!
+    # # ========================================================
+    # pool = multiprocessing.Pool()
+    # start = datetime.datetime.now()
+    # print("Start time: ", start)
+    # r = pool.map(G.get_node_entropy, G.nodes)
+    # end = datetime.datetime.now()
+    # print("End time: ", end)
+    # print("Run time: ", end - start)
+    # pool.close()
+    # pool.join()
+    #
+    # C_H_method1 = {i:C for (i,C) in r}
+    #
+    # GraphFile("results/entropy_method_1.txt").write_centrality_values_to_file(C_H_method1)
 
-    C_H = {i:C for (i,C) in r}
 
-    GraphFile("results/entropy_method_1.txt").write_centrality_values_to_file(C_H)
+    # Method 2: using manufacturing paths
+    # ===================================
+    p_ij = {(i,j):0 for i in G.nodes for j in G.nodes}
+    for path in paths:
+        i, j, p = G._path_probability(path)
+        p_ij[(i,j)] += p
+
+    C_H_method2 = calculate_entropy(G, p_ij)
+    GraphFile("results/entropy_method_2.txt").write_centrality_values_to_file(C_H_method2)
+
+
+    # Method 3: using manufacturing paths (accounting for subpaths)
+    # =============================================================
+    p_ij = {(i,j):0 for i in G.nodes for j in G.nodes}
+    seen_paths = set()
+
+    for path in paths:
+        for index in range(len(path)):
+            p = tuple(path[index: ])
+            if p not in seen_paths:
+                i, j, prob = G._path_probability(p)
+                p_ij[(i,j)] += prob
+                seen_paths.add(p)
+
+    C_H_method3 = calculate_entropy(G, p_ij)
+    GraphFile("results/entropy_method_3.txt").write_centrality_values_to_file(C_H_method3)
+
+
+    # Method 4: ignoring paths, i.e. source-sink probability
+    # ======================================================
+    number_of_manufactured_items = sum(list(paths.values()))
+
+    p_ij = {(i,j):0 for i in G.nodes for j in G.nodes}
+    for path, freq in paths.items():
+        i, j = path[0], path[-1]
+        p_ij[(i,j)] += freq / number_of_manufactured_items
+
+    C_H_method4 = calculate_entropy(G, p_ij)
+    GraphFile("results/entropy_method_4.txt").write_centrality_values_to_file(C_H_method4)
