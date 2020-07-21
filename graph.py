@@ -11,6 +11,7 @@ class Graph:
         self.edges = edges
         self.nodes = self._get_set_of_nodes()
         self.downstream_nodes = self._get_downstream_nodes()
+        self.downstream_strength = self._get_downstream_strength()
         self.all_paths = {}
 
 
@@ -92,6 +93,23 @@ class Graph:
         return downtream_nodes
 
 
+    def _get_downstream_stregth_of_i(self, i):
+        '''This function calculates the downstream stregth of node i.'''
+        downstream_stregth_of_i = 0
+        for edge, weight in self.edges.items():
+            if edge[0] == i:
+                downstream_stregth_of_i += weight
+        return downstream_stregth_of_i
+
+    def _get_downstream_strength(self):
+        '''This function returns the downstream strength of each node in the
+        graph. It is used to assign this value to an attribute.'''
+        downstream_stregth = dict()
+        for n in self.nodes:
+            downstream_stregth[n] = self._get_downstream_stregth_of_i(n)
+        return downstream_stregth
+
+
     def searchPaths(self, i, j, visited, path):
         '''Searches all possible paths from node i to node j.'''
         # Set current node as visited and store it in path
@@ -107,7 +125,7 @@ class Graph:
                 if visiting[u] == False:
                     all_paths += self.searchPaths(u, j, visiting, aux)
         else:
-            all_paths += [aux[:]]
+            all_paths += [tuple(aux[:])]
         return all_paths
 
     def findAllPaths(self, i, j):
@@ -120,9 +138,32 @@ class Graph:
         return self.searchPaths(i, j, visited, path)
 
 
-    def find_paths_and_log(self, i, j):
-        '''This function allows to log all paths. It calls findAllPaths(i,j)
-        to search for the paths but adds the option to log.
+    def yield_paths_from_i(self, i):
+        """Find all paths from node i. This method produces a generator as
+        opposed to a list of paths (obtained using the method findAllPaths).
+        """
+        path = [i]                  # path traversed so far
+        seen = {i}                  # set of vertices in path
+        yield path
+
+        def search():
+            for neighbour in self.downstream_nodes[path[-1]]:
+                if neighbour not in seen:
+                    seen.add(neighbour)
+                    path.append(neighbour)
+                    yield list(path)
+                    yield from search()
+                    path.pop()
+                    seen.remove(neighbour)
+
+        yield from search()
+
+
+
+
+    def find_paths_and_log(self, i):
+        '''This function allows to log all paths from i. It calls
+        yield_paths_from_i to search for the paths and logs yielded paths.
         IMPORTANT: The logging must be configured on the main script. Here is a
         suggested example to add to main:
 
@@ -130,9 +171,8 @@ class Graph:
         logging.basicConfig(filename="mylog.log", level=logging.INFO, format='%(asctime)s === %(message)s')
         '''
         import logging
-        paths_i_to_j = self.findAllPaths(i, j)
-        for path in paths_i_to_j:
-            logging.info("i=%s j=%s path=%s", i, j, path)
+        for path in self.yield_paths_from_i(i):
+            logging.info("%s", path)
         return True
 
 
@@ -143,11 +183,17 @@ class Graph:
         The function returns the downstream degree of node t as
         defined by Tutzauer (2007). The function is generalized to
         also work with weighted graphs.'''
-        downstream_degree = 0
+        # downstream_degree = 0
+        # t_index = path.index(t)
+        # for adj_node in self.downstream_nodes[t]:
+        #     if adj_node not in path[:t_index]:
+        #         downstream_degree += self.edges[ (t, adj_node) ]
+        # return downstream_degree
+        downstream_degree = self.downstream_strength[t]
         t_index = path.index(t)
-        for adj_node in self.downstream_nodes[t]:
-            if adj_node not in path[:t_index]:
-                downstream_degree += self.edges[ (t, adj_node) ]
+        already_visited = set(self.downstream_nodes[t]) & set(path[:t_index])
+        for adj_node in already_visited:
+            downstream_degree = downstream_degree - self.edges[ (t, adj_node) ]
         return downstream_degree
 
 
@@ -164,7 +210,7 @@ class Graph:
         else:
             t_index = path.index(t)
             edge =  (t, path[t_index + 1])
-            T_k = self.edges.get(edge, 0) / D_t
+            T_k = self.edges[edge] / D_t
         return T_k
 
     def _stopping_probability(self, t, path):
@@ -183,6 +229,7 @@ class Graph:
             sigma_k = self.edges.get(edge, 0) / D_t
         return sigma_k
 
+
     def _probability_path_ij(self, i, j):
         '''Calculate the probability of path i -> j. This is done
         following the general formulae on Tutzauer (2007).'''
@@ -190,13 +237,65 @@ class Graph:
         if self.all_paths.get((i,j), None) == None:
             self.all_paths[(i,j)] = self.findAllPaths(i, j)
         for path in self.all_paths[(i,j)]:
-            product = 1
+            product = self._stopping_probability(j, path)
+            if product != 0:
+                for node in path[:-1]:
+                    T_k = self._transfer_probability(node, path)
+                    product = product * T_k
+                prob_ij += product
+        return prob_ij
+
+
+    def _path_probability(self, path):
+        '''Calculate the probability of a given path in G. This
+        done following the general formulae on Tutzauer (2007).'''
+        i, j = path[0], path[-1]
+        product = self._stopping_probability(j, path)
+        if product != 0:
             for node in path[:-1]:
                 T_k = self._transfer_probability(node, path)
                 product = product * T_k
-            product = product * self._stopping_probability(j, path)
-            prob_ij += product
+        return i, j, product
+
+
+    def _probability_paths_from_i(self, i):
+        '''Calculate all the probabilities i -> j for all j in G. This
+        done following the general formulae on Tutzauer (2007). This
+        function differs from _probability_path_ij in that it uses a
+        generator to obtain paths instead of calculating them and storing
+        them on RAM.'''
+        prob_ij = {(i,j):0 for j in self.nodes}
+        for path in self.yield_paths_from_i(i):
+            # i, j = path[0], path[-1]
+            # product = self._stopping_probability(j, path)
+            # if product != 0:
+            #     for node in path[:-1]:
+            #         T_k = self._transfer_probability(node, path)
+            #         product = product * T_k
+            i, j, product = self._path_probability(path)
+            prob_ij[(i,j)] += product
         return prob_ij
+
+
+    def _print_probability_path_ij(self, i, j):
+        '''Calculate the probability of path i -> j. This is done
+        using the method _probability_path_ij(i,j). This method prints
+        the values of i, j and prob_ij.'''
+        prob_ij = self._probability_path_ij(i, j)
+        print("i={}, j={}, prob_ij={}".format(i, j, prob_ij))
+
+    def _log_probability_path_ij(self, i, j):
+        '''This function allows to log probabilities.
+        IMPORTANT: The logging must be configured on the main script. Here is a
+        suggested example to add to main:
+
+        import logging
+        logging.basicConfig(filename="mylog.log", level=logging.INFO, format='%(asctime)s === %(message)s')
+        '''
+        import logging
+        prob_ij = self._probability_path_ij(i, j)
+        logging.info("i=%s j=%s prob=%s", i, j, prob_ij)
+        return True
 
 
     def get_node_entropy(self, i):
@@ -209,8 +308,20 @@ class Graph:
         C_H = - C_H
         return (i, C_H)
 
+    def calculate_node_entropy(self, i):
+        '''Calculate the entropy of node i. The function returns
+        a tuple (i, C_H) of node i and its entropy.'''
+        C_H = 0
+        p_ij = self._probability_paths_from_i(i)
+        for j in self.nodes:
+            if p_ij[(i,j)] != 0:
+                C_H = C_H + p_ij[(i,j)] * log(p_ij[(i,j)], 2)
+        C_H = - C_H
+        return (i, C_H)
+
+
     def get_node_entropy_and_print(self, i):
-        print(self.get_node_entropy(i))
+        print(self.calculate_node_entropy(i))
 
 
 
