@@ -3,7 +3,7 @@
 # Data used in this file: pre-processed ("data/clean_manufacturing_paths.txt" and "data/clean_manufacturing_edges.txt")
 # Yamila Mariel Omar
 # Date of original code: 29th October 2019
-# Date of code last modification: 21st July 2020
+# Date of code last modification: 3rd August 2020
 
 
 
@@ -122,28 +122,27 @@ if __name__ == "__main__":
     # CALCULATE ENTROPY
     # =========================================================================
     if method == 1:
-        # # Method 1: finding all paths in the graph
-        # # Due to computation issues, this is deployed in an HPC!!!
-        # # ========================================================
+        # Method 1: finding all paths in the graph
+        # Due to computation issues, this is deployed in an HPC!!!
+        # ========================================================
         print("Method 1: Tutzauer's formulation (all paths in graph)")
-        # pool = multiprocessing.Pool()
-        # start = datetime.datetime.now()
-        # input_variables = zip(G.nodes, ["Other"]*len(G.nodes))
-        # print("Start time: ", start)
-        # r = pool.starmap(G.calculate_node_entropy, input_variables)
-        # end = datetime.datetime.now()
-        # print("End time: ", end)
-        # print("Run time: ", end - start)
-        # pool.close()
-        # pool.join()
-        #
-        # C_H = {i:C for (i,C) in r}
-        #
-        # end_date = end.strftime("%Y_%m_%d_")
-        # filename = "results/" + end_date + "entropy_method_1.txt"
-        # GraphFile(full_path + filename).write_centrality_values_to_file(C_H)
+        pool = multiprocessing.Pool()
+        start = datetime.datetime.now()
+        input_variables = zip(G.nodes, ["Other"]*len(G.nodes))
+        print("Start time: ", start)
+        r = pool.starmap(G.calculate_node_entropy, input_variables)
+        end = datetime.datetime.now()
+        print("End time: ", end)
+        print("Run time: ", end - start)
+        pool.close()
+        pool.join()
 
-        print("Method 1 must be run in the HPC!")
+        C_H = {i:C for (i,C) in r}
+
+        end_date = end.strftime("%Y_%m_%d_")
+        filename = "results/" + end_date + "entropy_method_1.txt"
+        GraphFile(full_path + filename).write_centrality_values_to_file(C_H)
+
 
 
     elif method == 2:
@@ -166,6 +165,7 @@ if __name__ == "__main__":
 
     elif method == 3:
         # Method 3: newly defined path probability (all paths in graph)
+        # Due to computation issues, this is deployed in an HPC!!!
         # =============================================================
         print("Method 3: newly defined path probability (all paths in graph)")
         pool = multiprocessing.Pool()
