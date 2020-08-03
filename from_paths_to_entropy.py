@@ -60,6 +60,31 @@ def find_all_subpaths_of_path(path):
     return subpaths
 
 
+def normalize_p_ij(p_ij, nodes):
+    '''Shannon's entropy is defined for sum(p_i) = 1. This function normalizes
+    p_ij so the Shannon's entropy can be calculated.
+    Input variables:
+    - p_ij: dictionary of probabilities
+    - nodes: set of graph nodes
+    Outupt varaibles:
+    - p_ij_normalized: normalized probabilities
+    '''
+    p_i = {n:0 for n in nodes}
+    for i in nodes:
+        for j in nodes:
+            p_i[i] += p_ij[(i,j)]
+
+    p_ij_normalized = dict()
+    for k,v in p_ij.items():
+        i = k[0]
+        if p_i[i] != 0:
+            p_ij_normalized[k] = v / p_i[i]
+        else:
+            p_ij_normalized[k] = v
+
+    return p_ij_normalized
+
+
 # ===== End Function definitions =========
 
 
@@ -77,8 +102,11 @@ if __name__ == "__main__":
 
     # Read data: clean paths and clean edges
     # ======================================
+    # full_path = "/mnt/irisgpfs/users/yomar/manufacturing_entropy_article/"
     filename_paths = "data/clean_manufacturing_paths.txt"
+    # filename_paths = full_path + filename_paths
     filename_edges = "data/clean_manufacturing_edges.txt"
+    # filename_edges = full_path + filename_edges
     edges = GraphFile(filename_edges).read_edges_from_file()
     paths = GraphFile(filename_paths).read_paths_with_count()
 
@@ -97,54 +125,88 @@ if __name__ == "__main__":
         # # Method 1: finding all paths in the graph
         # # Due to computation issues, this is deployed in an HPC!!!
         # # ========================================================
+        print("Method 1: Tutzauer's formulation (all paths in graph)")
         # pool = multiprocessing.Pool()
         # start = datetime.datetime.now()
+        # input_variables = zip(G.nodes, ["Other"]*len(G.nodes))
         # print("Start time: ", start)
-        # r = pool.map(G.get_node_entropy, G.nodes)
+        # r = pool.starmap(G.calculate_node_entropy, input_variables)
         # end = datetime.datetime.now()
         # print("End time: ", end)
         # print("Run time: ", end - start)
         # pool.close()
         # pool.join()
         #
-        # C_H_method1 = {i:C for (i,C) in r}
+        # C_H = {i:C for (i,C) in r}
         #
-        # GraphFile("results/entropy_method_1.txt").write_centrality_values_to_file(C_H_method1)
+        # end_date = end.strftime("%Y_%m_%d_")
+        # filename = "results/" + end_date + "entropy_method_1.txt"
+        # GraphFile(full_path + filename).write_centrality_values_to_file(C_H)
+
         print("Method 1 must be run in the HPC!")
 
 
     elif method == 2:
         # Method 2: using manufacturing paths
         # ===================================
+        print("Method 2: Tutzauer's formulation using manufacturing paths")
         p_ij = {(i,j):0 for i in G.nodes for j in G.nodes}
         for path in paths:
-            i, j, p = G._path_probability(path)
+            i, j, p = G._path_probability(path, formulation_type="Tutzauer")
             p_ij[(i,j)] += p
 
-        C_H_method2 = calculate_entropy(G, p_ij)
-        GraphFile("results/entropy_method_2.txt").write_centrality_values_to_file(C_H_method2)
+        p_ij_n = normalize_p_ij(p_ij, G.nodes)
+
+        C_H = calculate_entropy(G, p_ij_n)
+
+        end_date = datetime.datetime.now().strftime("%Y_%m_%d_")
+        filename = "results/" + end_date + "entropy_method_2.txt"
+        GraphFile(filename).write_centrality_values_to_file(C_H)
+
 
     elif method == 3:
-        # Method 3: using manufacturing paths (accounting for subpaths)
+        # Method 3: newly defined path probability (all paths in graph)
         # =============================================================
-        p_ij = {(i,j):0 for i in G.nodes for j in G.nodes}
-        seen_paths = set()
+        print("Method 3: newly defined path probability (all paths in graph)")
+        pool = multiprocessing.Pool()
+        start = datetime.datetime.now()
+        input_variables = zip(G.nodes, ["Other"]*len(G.nodes))
+        print("Start time: ", start)
+        r = pool.starmap(G.calculate_node_entropy, input_variables)
+        end = datetime.datetime.now()
+        print("End time: ", end)
+        print("Run time: ", end - start)
+        pool.close()
+        pool.join()
 
-        for path in paths:
-            for index in range(len(path)):
-                p = tuple(path[index: ])
-                if p not in seen_paths:
-                    i, j, prob = G._path_probability(p)
-                    p_ij[(i,j)] += prob
-                    seen_paths.add(p)
+        C_H = {i:C for (i,C) in r}
 
-        C_H_method3 = calculate_entropy(G, p_ij)
-        GraphFile("results/entropy_method_3.txt").write_centrality_values_to_file(C_H_method3)
-
+        end_date = end.strftime("%Y_%m_%d_")
+        filename = "results/" + end_date + "entropy_method_3.txt"
+        GraphFile(full_path + filename).write_centrality_values_to_file(C_H)
 
 
     elif method == 4:
-        # Method 4: ignoring paths, i.e. source-sink probability
+        # Method 4: newly defined path probability (manufacturing paths)
+        # =============================================================
+        print("Method 4: Alternative formulation using manufacturing paths")
+        p_ij = {(i,j):0 for i in G.nodes for j in G.nodes}
+        for path in paths:
+            i, j, p = G._path_probability(path, formulation_type="Other")
+            p_ij[(i,j)] += p
+
+        p_ij_n = normalize_p_ij(p_ij, G.nodes)
+
+        C_H = calculate_entropy(G, p_ij_n)
+
+        end_date = datetime.datetime.now().strftime("%Y_%m_%d_")
+        filename = "results/" + end_date + "entropy_method_4.txt"
+        GraphFile(filename).write_centrality_values_to_file(C_H)
+
+
+
+    elif method == 5:
+        # Method 5: ignoring paths, i.e. source-sink probability
         # ======================================================
         number_of_manufactured_items = sum(list(paths.values()))
 
@@ -153,48 +215,13 @@ if __name__ == "__main__":
             i, j = path[0], path[-1]
             p_ij[(i,j)] += freq / number_of_manufactured_items
 
-        C_H_method4 = calculate_entropy(G, p_ij)
-        GraphFile("results/entropy_method_4.txt").write_centrality_values_to_file(C_H_method4)
+        p_ij_n = normalize_p_ij(p_ij, G.nodes)
 
+        C_H = calculate_entropy(G, p_ij_n)
 
-    elif method == 5:
-        # Method 5: newly defined path probability (using manufacturing paths)
-        # ====================================================================
-        def path_prob(path):
-            i, j = path[0], path[-1]
-            product = 1
-            for node in path[:-1]:
-                T_k = G._transfer_probability(node, path)
-                product = product * T_k
-            return i, j, product
-
-
-
-        # Get all subpaths
-        pool = multiprocessing.Pool()
-        start = datetime.datetime.now()
-        print("Start time: ", start)
-        r = pool.map(find_all_subpaths_of_path, paths.keys())
-        end = datetime.datetime.now()
-        print("End time: ", end)
-        print("Run time: ", end - start)
-        pool.close()
-        pool.join()
-
-
-        p_ij = {(i,j):0 for i in G.nodes for j in G.nodes}
-        seen = set()
-        for result in r:
-            for path in result:
-                if path not in seen:
-                    i, j, prob = path_prob(path)
-                    p_ij[(i,j)] += prob
-                    seen.add(path)
-
-        print("Number of subpaths: ", len(seen))
-
-        C_H_method5 = calculate_entropy(G, p_ij)
-        GraphFile("results/entropy_method_5.txt").write_centrality_values_to_file(C_H_method5)
+        end_date = datetime.datetime.now().strftime("%Y_%m_%d_")
+        filename = "results/" + end_date + "entropy_method_5.txt"
+        GraphFile(filename).write_centrality_values_to_file(C_H)
 
 
     else:
