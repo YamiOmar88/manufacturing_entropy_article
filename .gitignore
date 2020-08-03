@@ -3,3 +3,4 @@ data/train_date.csv
 article/
 figures/*
 *.pyc
+others/
