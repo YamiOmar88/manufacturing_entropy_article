@@ -184,11 +184,24 @@ class Graph:
 
 
 
-    def _path_probability(self, path):
+    def _arrival_probability(self, t):
+        '''Arrival probability according to the new formulation proposed in the
+        article.'''
+        sigma_k = 1
+        return sigma_k
+
+
+
+    def _path_probability(self, path, formulation_type):
         '''Calculate the probability of a given path in G. This
         done following the general formulae on Tutzauer (2007).'''
         i, j = path[0], path[-1]
-        product = self._stopping_probability(j, path)
+
+        if formulation_type == "Tutzauer":
+            product = self._stopping_probability(j, path)
+        else:
+            product = self._arrival_probability(j)
+
         if product != 0:
             for node in path[:-1]:
                 T_k = self._transfer_probability(node, path)
@@ -197,7 +210,7 @@ class Graph:
 
 
 
-    def _probability_paths_from_i(self, i):
+    def _probability_paths_from_i(self, i, formulation_type):
         '''Calculate all the probabilities i -> j for all j in G. This
         done following the general formulae on Tutzauer (2007). This
         function differs from _probability_path_ij in that it uses a
@@ -205,17 +218,48 @@ class Graph:
         them on RAM.'''
         prob_ij = {(i,j):0 for j in self.nodes}
         for path in self.yield_paths_from_i(i):
-            i, j, product = self._path_probability(path)
+            i, j, product = self._path_probability(path, formulation_type)
             prob_ij[(i,j)] += product
         return prob_ij
 
 
 
-    def calculate_node_entropy(self, i):
+    def _normalize_p_ij(self, p_ij):
+        '''Shannon's entropy is defined for sum(p_i) = 1. This function normalizes
+        p_ij so the Shannon's entropy can be calculated.
+        Input variables:
+        - p_ij: dictionary of probabilities
+        - nodes: set of graph nodes
+        Outupt varaibles:
+        - p_ij_normalized: normalized probabilities
+        '''
+        p_i = {n:0 for n in self.nodes}
+        for i in self.nodes:
+            for j in self.nodes:
+                p_i[i] += p_ij.get((i,j), 0)
+
+        p_ij_normalized = dict()
+        for k,v in p_ij.items():
+            i = k[0]
+            if p_i[i] != 0:
+                p_ij_normalized[k] = v / p_i[i]
+            else:
+                p_ij_normalized[k] = v
+
+        return p_ij_normalized
+
+
+
+    def calculate_node_entropy(self, i, formulation_type = "Tutzauer"):
         '''Calculate the entropy of node i. The function returns
-        a tuple (i, C_H) of node i and its entropy.'''
+        a tuple (i, C_H) of node i and its entropy.
+        Input variables:
+        i: node in graph.
+        formulation_type: "Tutzauer" by default. It follows Tutzauer's
+        formulation. Any other value, follows the proposed formulation.'''
         C_H = 0
-        p_ij = self._probability_paths_from_i(i)
+        p_ij = self._probability_paths_from_i(i, formulation_type)
+        p_ij = self._normalize_p_ij(p_ij)
         for j in self.nodes:
             if p_ij[(i,j)] != 0:
                 C_H = C_H + p_ij[(i,j)] * log(p_ij[(i,j)], 2)
