@@ -128,7 +128,7 @@ if __name__ == "__main__":
         print("Method 1: Tutzauer's formulation (all paths in graph)")
         pool = multiprocessing.Pool()
         start = datetime.datetime.now()
-        input_variables = zip(G.nodes, ["Other"]*len(G.nodes))
+        input_variables = zip(G.nodes, ["Tutzauer"]*len(G.nodes))
         print("Start time: ", start)
         r = pool.starmap(G.calculate_node_entropy, input_variables)
         end = datetime.datetime.now()
