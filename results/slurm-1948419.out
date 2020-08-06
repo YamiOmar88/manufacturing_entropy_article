@@ -1,0 +1,17 @@
+== Starting run at Tue Aug  4 07:38:08 CEST 2020
+== Full Network for Entropy Centrality Article
+== Method: 1
+== Job ID: 1948419
+== Job name: Entropy_Centrality_Article
+== Node list: iris-064
+== Number of procs: 1
+== Submit dir. : /mnt/irisgpfs/users/yomar
+==========================================
+Number of nodes:  50
+Number of edges:  319
+Method 1: Tutzauer's formulation (all paths in graph)
+/mnt/irisgpfs/users/yomar/pypy3.6-v7.1.1-linux64/lib-python/3/hashlib.py:172: RuntimeWarning: The _hashlib module is not available, falling back to a much slower implementation (libssl.so.1.0.0: cannot open shared object file: No such file or directory)
+  RuntimeWarning)
+Start time:  2020-08-04 07:38:12.912799
+End time:  2020-08-06 03:01:46.977663
+Run time:  1 day, 19:23:34.064864
