@@ -18,7 +18,7 @@ def add_self_loops(paths, edges):
 
 
 
-def generate_dot_file(graph, graph_name, filename):
+def generate_dot_file(graph, node_colors, graph_name, filename):
     # File creation
     file_content = ''
 
@@ -30,10 +30,10 @@ def generate_dot_file(graph, graph_name, filename):
     file_content += 'edge[arrowsize=0.2, arrowhead=normal]\n'
 
     for n in graph.nodes:
-        file_content += str(n) + ' [shape=circle, style=filled, fontsize=20, color= orange, width=0.75, height=0.75, fixedsize=true]\n'
+        file_content += str(n) + ' [shape=circle, style=filled, fontsize=20, color= ' + node_colors[n] + ', width=0.75, height=0.75, fixedsize=true]\n'
 
     for k,v in graph.edges.items():
-        file_content += str(k[0]) + ' -> ' + str(k[1]) + ' [penwidth=1]\n'
+        file_content += str(k[0]) + ' -> ' + str(k[1]) + ' [penwidth=1.5]\n'
 
     file_content += '}'
 
@@ -69,6 +69,17 @@ if __name__ == "__main__":
     print("Number of nodes: ", len(G.nodes))
     print("Number of edges: ", len(G.edges.keys()))
 
+    # Color code nodes
+    # =======================
+    node_colors = dict()
+    for node in G.nodes:
+        if node in {0, 1, 24, 12, 25, 13, 2, 3, 14, 15, 29}: # Start nodes threshold 0.001
+            node_colors[node] = "salmon"
+        elif node in {37, 34, 36, 35, 33, 51, 38, 49, 50, 47}: # End nodes threshold 0.001
+            node_colors[node] = "lightblue"
+        else:
+            node_colors[node] = "gold"
+
     # Generate DOT file with network graph
     # ====================================
-    generate_dot_file(G, "Bosch", "manufacturing_network_graph.dot")
+    generate_dot_file(G, node_colors, "Bosch", "manufacturing_network_graph.dot")
