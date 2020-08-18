@@ -4,3 +4,4 @@ article/
 figures/*
 *.pyc
 others/
+dummy*.py
