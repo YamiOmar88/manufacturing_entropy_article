@@ -62,7 +62,7 @@ if __name__ == "__main__":
 
     plt.barh(x_pos, freq, color='red')
     plt.ylabel("Nodes")
-    plt.xlabel("Frequency of n in manufacturing paths")
+    plt.xlabel("Fraction of n in manufacturing paths")
 
     plt.yticks(x_pos, x, fontsize=6)
     plt.savefig("figures/freq_n_in_paths.pdf")
@@ -89,7 +89,7 @@ if __name__ == "__main__":
 
     plt.barh(x_pos, freq, color='red')
     plt.ylabel("Start Nodes")
-    plt.xlabel("Freq. of n as start node in manufacturing paths")
+    plt.xlabel("Fraction of n as start node in manufacturing paths")
 
     plt.yticks(x_pos, x, fontsize=6)
     plt.savefig("figures/freq_start_nodes.pdf")
@@ -115,7 +115,7 @@ if __name__ == "__main__":
 
     plt.barh(x_pos, freq, color='red')
     plt.ylabel("End Nodes")
-    plt.xlabel("Freq. of n as end node in manufacturing paths")
+    plt.xlabel("Fraction of n as end node in manufacturing paths")
 
     plt.yticks(x_pos, x, fontsize=6)
     plt.savefig("figures/freq_end_nodes.pdf")
