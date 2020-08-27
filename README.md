@@ -12,7 +12,7 @@ To demonstrate the use of path - transfer flow entropy on manufacturing networks
 
 ### Data processing
 
-1. **From time stamp to manufacturing paths:** the data in `train_date.csv` is processes using `from_timestamp_to_paths.py` to obtain `data/manufacturing_paths.txt` and `data/manufacturing_edges.txt`.
+1. **From time stamp to manufacturing paths:** the data in `data/train_date.csv` is processes using `from_timestamp_to_paths.py` to obtain `data/manufacturing_paths.txt` and `data/manufacturing_edges.txt`.
 
    `data/manufacturing_paths.txt` contains a manufacturing path in each line as well as the count for said path. The path is a list of white space separated workstations (identified with an integer from 0 to 51) while the count is the frequency with which said path showed in the data under evaluation. Thus, the count is a natural number. In total, there are 164213 different manufacturing paths in this dataset.
 
@@ -26,10 +26,23 @@ To demonstrate the use of path - transfer flow entropy on manufacturing networks
 
   * **Weighted, directed graph with self-loops on end nodes only:** a weighted, directed graph with self-loops on end nodes only is constructed as explained in the Methods section of the article. The path probability `p_ij` for all `i` and `j` is calculated. The necessary code is contained in `weighted_pij.py`. Given the computational heaviness of this code, it was run in the University of Luxembourg HPC.
 
-### Heatmaps plotting
+Results obtained from these methods are saved in the `results/` folder.
+
+### Heatmap plotting
 
 In order to plot the `p_ij` heatmaps, the `plot_heatmap.py` file must be run. This calls the `heatmap.py` module.
 
 ### What about the other files?
+
+Well, there are a number of modules developed for this work, namely:
+
+* `graph.py`: Graph class containing all methods necessary for the calculating.
+* `graphfile.py` GraphFile class for reading/writing paths and edges from .txt files.
+* `dotfile.py` and `plot_network.py` are used to make Figure 2.
+* `from_pij_to_entropy.py` quick module to calculate the entropy from `p_ij` values.
+
+
+
+
 
 Those were used for other tests that are not relevant in the context of this article.
