@@ -29,3 +29,7 @@ To demonstrate the use of path - transfer flow entropy on manufacturing networks
 ### Heatmaps plotting
 
 In order to plot the `p_ij` heatmaps, the `plot_heatmap.py` file must be run. This calls the `heatmap.py` module.
+
+### What about the other files?
+
+Those were used for other tests that are not relevant in the context of this article.
