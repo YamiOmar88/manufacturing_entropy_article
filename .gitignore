@@ -1,7 +1,7 @@
 __pycache__/
 data/train_date.csv
 article/
-figures/*
+figures/
 *.pyc
 others/
 dummy*.py
